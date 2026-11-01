@@ -36,7 +36,8 @@ test('production preparation uses distinct ID, deterministic increasing Android 
     assert.match(gradle, /versionCode = 200020001/);
     assert.match(gradle, /versionName = "2\.0\.20-trickplay\.1"/);
     const conf = JSON.parse(fs.readFileSync(path.join(dir,'src-tauri/tauri.conf.json'),'utf8'));
-    assert.equal(conf.identifier,'org.litefin.app.trickplay');
+    assert.equal(conf.identifier,'org.litefin.app');
+    assert.equal(conf.productName,'Litefin Trickplay');
     p = spawnSync(process.execPath, ['prepare-production.mjs',dir,'v2.0.20','1'], {cwd:home,encoding:'utf8'});
     assert.notEqual(p.status,0,'cannot configure same source twice');
   } finally { fs.rmSync(dir,{recursive:true,force:true}); }
