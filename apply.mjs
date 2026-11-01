@@ -1,3 +1,4 @@
+
 #!/usr/bin/env node
 /**
  * Applies experimental continuous FF/REW to an extracted Litefin v2.0.20 tree.
@@ -10,7 +11,8 @@ import { fileURLToPath } from 'node:url';
 
 const bundleRoot = path.dirname(fileURLToPath(import.meta.url));
 const repo = path.resolve(process.argv[2] || '.');
-const read = rel => fs.readFileSync(path.join(repo, rel), 'utf8');
+// Git checkout and release archives can use different newline conventions.
+const read = rel => fs.readFileSync(path.join(repo, rel), 'utf8').replace(/\r\n?/g, '\n');
 const write = (rel, content) => fs.writeFileSync(path.join(repo, rel), content);
 
 function replaceOne(source, needle, replacement, label) {
@@ -35,19 +37,23 @@ if (osd.includes('ContinuousTrickplay')) throw Error('Already patched; refusing 
 osd = insertAfter(osd,
     "import { TrickplayManager } from './TrickplayManager.js';",
     "\nimport ContinuousTrickplay from './ContinuousTrickplay.js';", 'OSD import');
-// Constructor only (the first occurrence of the anchor).
-osd = insertAfter(osd,
-    '        this._seekDirection = null;\n        // Focus & Track State',
-    '', 'Constructor check');
-osd = replaceOne(osd,
-    '        this._seekDirection = null;\n        // Focus & Track State',
-    '        this._seekDirection = null;\n        this._continuousTrickplay = new ContinuousTrickplay(this);\n        // Focus & Track State', 'OSD constructor');
+// Anchor to the *unique constructor comment*, not a fragile two-line substring.
+// Validate the nearby field so we fail safely if upstream rearranges the class.
+const constructorMarker = /^([ \t]*)\/\/ Focus & Track State[^\n]*$/gm;
+const constructorMatches = [...osd.matchAll(constructorMarker)];
+if (constructorMatches.length !== 1) {
+    const hint = osd.split('\n').filter(line => /Focus|_seekDirection/.test(line)).slice(0, 8).join(' | ');
+    throw Error(`OSD constructor marker: expected one match, found ${constructorMatches.length}. Nearby lines: ${hint}`);
+}
+const constructorPos = constructorMatches[0].index;
+if (!/this\._seekDirection\s*=\s*null\s*;\s*$/.test(osd.slice(Math.max(0, constructorPos - 130), constructorPos))) {
+    throw Error('OSD constructor marker is not immediately after _seekDirection initialization; upstream layout changed.');
+}
+osd = osd.replace(constructorMarker,
+    (_full, indent) => `${indent}this._continuousTrickplay = new ContinuousTrickplay(this);\n${indent}// Focus & Track State`);
 osd = insertAfter(osd,
     '    handleInput(key, e) {',
     `\n        // Continuous scan owns OK/Play and Back; D-pad cancels before normal navigation.\n        if (this._continuousTrickplay?.active && ['left', 'right', 'up', 'down'].includes(key)) {\n            this._continuousTrickplay.cancel();\n        }`, 'OSD key handler');
-osd = insertAfter(osd,
-    '    handleInput(key, e) {',
-    '', 'OSD key handler check');
 osd = replaceOne(osd,
     '    handleInput(key, e) {',
     `    startContinuousTrickplay(direction, event = null) {\n        return this._continuousTrickplay.press(direction, event);\n    }\n    handleInput(key, e) {`, 'Public scan entry point');
@@ -104,4 +110,4 @@ write(osdPath, osd);
 write(playerPath, player);
 write(gradlePath, gradle);
 write(manifestPath, manifest);
-console.log('Patched Litefin v2.0.20: 4x / 8x / 16x / 32x continuous scan; separate Android debug app.');
+console.log('Patched Litefin v2.0.20 (v0.2): 4x / 8x / 16x / 32x continuous scan; separate Android debug app.');
