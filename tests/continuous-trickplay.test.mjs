@@ -42,7 +42,7 @@ function fixture({ startSeconds = 25, durationSeconds = 120, paused = false } = 
     return { osd, scan, player, calls, move, getPaused: () => paused, getTimerCount: () => timers.size };
 }
 
-test('four requested speeds and time evolution', () => {
+test('five requested speeds and time evolution', () => {
     const f = fixture();
     assert.equal(f.scan.press('fastForward'), true);
     assert.equal(TRICKPLAY_SPEEDS[f.scan._speedIndex], 4);
@@ -57,7 +57,9 @@ test('four requested speeds and time evolution', () => {
     f.move(300); f.scan.press('fastForward');
     assert.equal(TRICKPLAY_SPEEDS[f.scan._speedIndex], 32);
     f.move(300); f.scan.press('fastForward');
-    assert.equal(TRICKPLAY_SPEEDS[f.scan._speedIndex], 32);
+    assert.equal(TRICKPLAY_SPEEDS[f.scan._speedIndex], 64);
+    f.move(300); f.scan.press('fastForward');
+    assert.equal(TRICKPLAY_SPEEDS[f.scan._speedIndex], 64);
     assert.equal(f.calls.seek.length, 0, 'must not seek decoder while scanning');
     assert.equal(f.getTimerCount(), 1);
     f.scan.stop();
@@ -110,4 +112,17 @@ test('position math is bounded at both ends and pauses clock after a stall', () 
     assert.equal(advancePreviewTicks(0, 100 * S, 32, -1, 100), 0);
     assert.equal(advancePreviewTicks(99 * S, 100 * S, 32, 1, 100), 100 * S);
     assert.equal(advancePreviewTicks(0, 100 * S, 4, 1, 10_000), 3 * S);
+});
+
+test('64x scan moves cursor 64 seconds per second and clamps at end', () => {
+    const f = fixture({ startSeconds: 20, durationSeconds: 100 });
+    f.scan.press('fastForward');
+    for (let speed of [8, 16, 32, 64]) { f.move(300); f.scan.press('fastForward'); }
+    assert.equal(TRICKPLAY_SPEEDS[f.scan._speedIndex], 64);
+    const prior = f.scan._target;
+    f.move(100);
+    assert.equal(Math.round((f.scan._target - prior) / S * 10) / 10, 6.4);
+    for (let i = 0; i < 5; i++) f.move(250);
+    assert.equal(f.scan._target, 100 * S);
+    f.scan.stop();
 });
