@@ -1,16 +1,16 @@
 /**
  * ContinuousTrickplay — experimental Litefin Android TV seek preview module.
  *
- * Physical FF/REW presses start an autonomous 4x/8x/16x/32x virtual scan.
+ * Physical FF/REW presses start an autonomous 4x/8x/16x/32x/64x virtual scan.
  * Actual video stays paused until Play/OK commits one real seek; Back cancels.
  * D-pad navigation remains the stock Litefin behavior.
  *
  * This module deliberately uses Litefin's existing seek-preview fields and
  * OSD drawing methods. No video decoding or server APIs are altered.
  *
- * License: GPL-2.0 (to be included in Litefin, GPL-2.0).
+ * License: MPL-2.0 (see the upstream Litefin LICENSE file).
  */
-export const TRICKPLAY_SPEEDS = Object.freeze([4, 8, 16, 32]);
+export const TRICKPLAY_SPEEDS = Object.freeze([4, 8, 16, 32, 64]);
 const TICKS_PER_SECOND = 10_000_000;
 const TICK_INTERVAL_MS = 100;
 const THUMB_REFRESH_MS = 175;
