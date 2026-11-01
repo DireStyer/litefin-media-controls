@@ -24,7 +24,7 @@ class OSDController {
     confirmPendingSeek(key = 'enter', e = null) {}
     _handleBack() {}
     _clearSeekState(restorePlayback = true) {}
-}`);
+}`.replace(/\n/g, '\r\n'));
     write('src/pages/PlayerPage.js', `class PlayerPage {
   configure() {
     this.on('key:rewind', () => {
@@ -68,6 +68,7 @@ test('patcher applies exactly once and is idempotence-safe', () => {
         assert.match(gradle,/applicationIdSuffix = "\.trickplaytest"/);
         const copy=fs.readFileSync(path.join(root,'tests/continuous-trickplay.test.mjs'),'utf8');
         assert.match(copy,/\.\.\/src\/player\/osd\/ContinuousTrickplay\.js/);
+        assert.match(fs.readFileSync(path.join(root,'src/player/osd/ContinuousTrickplay.js'),'utf8'), /\[4, 8, 16, 32, 64\]/);
         const second=spawnSync(process.execPath, cmd, { cwd: dir, encoding: 'utf8' });
         assert.notEqual(second.status,0);
         assert.match(second.stderr,/Already patched/);
