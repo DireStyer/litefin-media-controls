@@ -1,5 +1,6 @@
+#!/usr/bin/env node
 /**
- * Applies experimental continuous FF/REW to an extracted Litefin v2.0.20 tree.
+ * Applies continuous FF/REW to a Litefin release; aborts if source anchors change.
  * Strict anchors intentionally fail on changed upstream source rather than
  * quietly producing a damaged APK. Usage: node apply.mjs /path/to/litefin
  */
@@ -16,7 +17,7 @@ const write = (rel, content) => fs.writeFileSync(path.join(repo, rel), content);
 function replaceOne(source, needle, replacement, label) {
     const pieces = source.split(needle);
     if (pieces.length !== 2) {
-        throw Error(`${label}: expected exactly one original source anchor; found ${pieces.length - 1}. Use Litefin v2.0.20.`);
+        throw Error(`${label}: expected exactly one original source anchor; found ${pieces.length - 1}. Review changed upstream Litefin source before publishing.`);
     }
     return pieces.join(replacement);
 }
@@ -25,7 +26,7 @@ function insertAfter(source, needle, insertion, label) {
 }
 
 const version = JSON.parse(read('package.json')).version;
-if (version !== '2.0.20') throw Error(`Expected Litefin v2.0.20, got ${version}.`);
+if (!/^\d+\.\d+\.\d+$/.test(version)) throw Error(`Expected stable Litefin version X.Y.Z, got ${version}.`);
 const osdPath = 'src/player/osd/OSDController.js';
 const playerPath = 'src/pages/PlayerPage.js';
 let osd = read(osdPath);
@@ -108,4 +109,4 @@ write(osdPath, osd);
 write(playerPath, player);
 write(gradlePath, gradle);
 write(manifestPath, manifest);
-console.log('Patched Litefin v2.0.20 (v0.2): 4x / 8x / 16x / 32x continuous scan; separate Android debug app.');
+console.log('Patched Litefin: 4x / 8x / 16x / 32x / 64x continuous scan; production ID prepared separately.');
