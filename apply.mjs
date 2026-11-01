@@ -1,5 +1,3 @@
-
-#!/usr/bin/env node
 /**
  * Applies experimental continuous FF/REW to an extracted Litefin v2.0.20 tree.
  * Strict anchors intentionally fail on changed upstream source rather than
