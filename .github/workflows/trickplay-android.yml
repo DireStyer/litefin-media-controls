@@ -1,0 +1,81 @@
+name: Build Litefin Trickplay Test APK
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  android-apk:
+    name: Patch and compile Android debug APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: Check out patch kit
+        uses: actions/checkout@v4
+
+      - name: Download fixed upstream Litefin v2.0.20 source
+        run: git clone --branch v2.0.20 --depth 1 https://github.com/MoazSalem/litefin.git upstream
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK and NDK
+        shell: bash
+        run: |
+          yes | sdkmanager --licenses || true
+          sdkmanager 'platforms;android-37' 'build-tools;37.0.0' 'platform-tools' 'ndk;27.0.12077973'
+          echo "NDK_HOME=$ANDROID_HOME/ndk/27.0.12077973" >> "$GITHUB_ENV"
+          echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/27.0.12077973" >> "$GITHUB_ENV"
+
+      - name: Install Rust Android compilation targets
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android,armv7-linux-androideabi,x86_64-linux-android,i686-linux-android
+
+      - name: Patch upstream Litefin source
+        run: node apply.mjs upstream
+
+      - name: Test patched feature behavior
+        run: |
+          node --test tests/continuous-trickplay.test.mjs tests/patch-anchors-test.mjs
+          node --test upstream/tests/continuous-trickplay.test.mjs
+
+      - name: Install Litefin dependencies
+        working-directory: upstream
+        run: npm ci
+
+      - name: Compile universal Android debug APK
+        working-directory: upstream
+        run: npm run package:android-universal-debug
+
+      - name: Identify build outputs
+        if: always()
+        run: |
+          find upstream -type f -name '*.apk' -not -path '*/node_modules/*' -print || true
+
+      - name: Publish APK to workflow artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: litefin-trickplay-v0.1-android-debug
+          path: |
+            upstream/src-tauri/gen/android/app/build/outputs/apk/**/*.apk
+            upstream/src-tauri/target/android/**/apk/*.apk
+            upstream/*.apk
+            upstream/dist/**/*.apk
+            upstream/release/**/*.apk
+            upstream/output/**/*.apk
+          if-no-files-found: error
+          retention-days: 14
