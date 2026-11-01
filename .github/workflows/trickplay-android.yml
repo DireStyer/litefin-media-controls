@@ -38,7 +38,7 @@ jobs:
         shell: bash
         run: |
           yes | sdkmanager --licenses || true
-          sdkmanager 'platforms;android-37' 'build-tools;37.0.0' 'platform-tools' 'ndk;27.0.12077973'
+          sdkmanager 'platforsdkmanager 'platforms;android-37.0' 'build-tools;37.0.0' 'platform-tools' 'ndk;27.0.12077973'ms;android-37' 'build-tools;37.0.0' 'platform-tools' 'ndk;27.0.12077973'
           echo "NDK_HOME=$ANDROID_HOME/ndk/27.0.12077973" >> "$GITHUB_ENV"
           echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/27.0.12077973" >> "$GITHUB_ENV"
 
