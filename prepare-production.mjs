@@ -46,8 +46,8 @@ manifest = replaceExactlyOnce(manifest,
 // generated Kotlin's original namespace (org.litefin.app).
 const configFile = path.join(repo, 'src-tauri/tauri.conf.json');
 const config = JSON.parse(fs.readFileSync(configFile, 'utf8'));
-if (config.identifier !== 'org.litefin.app') throw Error(`Unexpected Tauri identifier: ${config.identifier}`);
-config.identifier = 'org.litefin.app.trickplay';
+if (config.identifier !== 'org.litefin.app') 
+    throw Error(`Unexpected Tauri identifier: ${config.identifier}`);
 config.productName = 'Litefin Trickplay';
 fs.writeFileSync(gradleFile, gradle);
 fs.writeFileSync(manifestFile, manifest);
